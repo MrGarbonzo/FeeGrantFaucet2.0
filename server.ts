@@ -15,6 +15,14 @@ dotenv.config();
 
 const app = express();
 
+// Enable CORS for all routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
 const PORT = process.env.PORT || 3000;
 
 const SECRET_CHAIN_ID = process.env.CHAIN_ID || "secret-4";
@@ -106,11 +114,12 @@ app.get("/claim/:address", async (req, res) => {
         }
       }).catch(async (e) => {
         try {
-        if (e.code === 13 && e.message === "fee-grant not found: not found") {
+        if ((e.code === 13 && e.message === "fee-grant not found: not found") ||
+            (e.code === 2 && e.message.includes("fee-grant not found"))) {
           console.log("new feegrant", address);
 
           const feeGrant = await giveFeeGrant(secretjs, address, false);
-          
+
           const results = { feegrant: feeGrant?.allowance, address: address };
           return res.json(results);
         }
