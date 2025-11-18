@@ -39,16 +39,6 @@ services:
     networks:
       - faucet-network
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared-tunnel
-    restart: unless-stopped
-    command: tunnel --url http://faucet:3001
-    depends_on:
-      - faucet
-    networks:
-      - faucet-network
-
 networks:
   faucet-network:
     driver: bridge
