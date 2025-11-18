@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  faucet:
+    build: .
+    container_name: secret-feegrant-faucet
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Secret Network Configuration
+      - CHAIN_ID=${CHAIN_ID:-secret-4}
+      - LCD_NODE=${LCD_NODE:-https://lcd.secret.adrius.starshell.net}
+
+      # Faucet Settings
+      - PORT=${PORT:-3001}
+      - FAUCET_AMOUNT=${FAUCET_AMOUNT:-50000}
+      - FAUCET_DENOM=${FAUCET_DENOM:-uscrt}
+      - FAUCET_RELOAD_TIME=${FAUCET_RELOAD_TIME:-24}
+
+      # Gas Settings
+      - GAS_FEE=${GAS_FEE:-0.5}
+      - GAS_DENOM=${GAS_DENOM:-uscrt}
+      - GAS_LIMIT=${GAS_LIMIT:-17500}
+
+      # Memo
+      - MEMO=${MEMO:-Fee Grant provided by Secret Network Dashboard}
+
+      # CRITICAL: Your faucet wallet mnemonic
+      - FAUCET_MNEMOMIC=${FAUCET_MNEMOMIC}
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+    networks:
+      - faucet-network
+
+networks:
+  faucet-network:
+    driver: bridge

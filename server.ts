@@ -45,7 +45,7 @@ const mnemonic = process.env.FAUCET_MNEMOMIC || undefined;
 
 const wallet = new Wallet(mnemonic, {
   hdAccountIndex: 0,
-  coinType: 118
+  coinType: 529
 });
 
 const faucetAddress = wallet.address;
