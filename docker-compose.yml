@@ -1,12 +1,30 @@
 version: '3.8'
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to faucet:3001
+    depends_on:
+      - faucet
+    networks:
+      - faucet-network
+
   faucet:
     image: ghcr.io/mrgarbonzo/feegrantfaucet2.0:latest
     container_name: secret-feegrant-faucet
     restart: unless-stopped
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     environment:
       # Secret Network Configuration
       - CHAIN_ID=${CHAIN_ID:-secret-4}
@@ -42,3 +60,7 @@ services:
 networks:
   faucet-network:
     driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
