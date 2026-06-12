@@ -1,67 +1,32 @@
-version: '3.8'
-
 services:
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy-proxy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      # On-demand TLS handles the random SecretVM hostname; no DOMAIN needed.
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - faucet
-    networks:
-      - faucet-network
-
+  # Single-service SecretVM deployment. SecretVM provisions the TLS cert for the
+  # assigned <vm-name>.vm.scrtlabs.com and reverse-proxies https traffic to the
+  # published port below — so NO caddy / reverse proxy / TLS is needed here.
+  # (Mirrors the working secretornot SecretVM compose.)
   faucet:
     image: ghcr.io/mrgarbonzo/feegrantfaucet2.0:latest
     container_name: secret-feegrant-faucet
     restart: unless-stopped
-    expose:
-      - "3001"
+    ports:
+      - "3001:3001"
     environment:
-      # Secret Network Configuration
       - CHAIN_ID=${CHAIN_ID:-secret-4}
       # Required — no hardcoded default (the old Starshell default is dead, and a
       # private endpoint must not live in the repo). Set LCD_NODE in usr/.env.
       - LCD_NODE=${LCD_NODE:?LCD_NODE must be set (e.g. https://rpc12.scrtlabs.com in usr/.env)}
-
-      # Faucet Settings
       - PORT=${PORT:-3001}
       - FAUCET_AMOUNT=${FAUCET_AMOUNT:-50000}
       - FAUCET_DENOM=${FAUCET_DENOM:-uscrt}
       - FAUCET_RELOAD_TIME=${FAUCET_RELOAD_TIME:-24}
-
-      # Gas Settings
       - GAS_FEE=${GAS_FEE:-0.5}
       - GAS_DENOM=${GAS_DENOM:-uscrt}
       - GAS_LIMIT=${GAS_LIMIT:-17500}
-
-      # Memo
       - MEMO=${MEMO:-Fee Grant provided by Secret Network Dashboard}
-
-      # CRITICAL: Your faucet wallet mnemonic
+      # CRITICAL: funded faucet wallet mnemonic (set in usr/.env)
       - FAUCET_MNEMOMIC=${FAUCET_MNEMOMIC}
-
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 10s
-
-    networks:
-      - faucet-network
-
-networks:
-  faucet-network:
-    driver: bridge
-
-volumes:
-  caddy_data:
-  caddy_config:
