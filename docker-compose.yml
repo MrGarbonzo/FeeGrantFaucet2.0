@@ -9,11 +9,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      # On-demand TLS handles the random SecretVM hostname; no DOMAIN needed.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
-    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to faucet:3001
     depends_on:
       - faucet
     networks:
@@ -28,7 +27,9 @@ services:
     environment:
       # Secret Network Configuration
       - CHAIN_ID=${CHAIN_ID:-secret-4}
-      - LCD_NODE=${LCD_NODE:-https://lcd.secret.adrius.starshell.net}
+      # Required — no hardcoded default (the old Starshell default is dead, and a
+      # private endpoint must not live in the repo). Set LCD_NODE in usr/.env.
+      - LCD_NODE=${LCD_NODE:?LCD_NODE must be set (e.g. https://rpc12.scrtlabs.com in usr/.env)}
 
       # Faucet Settings
       - PORT=${PORT:-3001}
